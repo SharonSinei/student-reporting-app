@@ -83,7 +83,7 @@ if uploaded_file is not None:
         df = pd.read_excel(uploaded_file, sheet_name=0)
 
         # Preprocessing
-        df['Gender'] = df['Sex'].astype(str).str.strip().str.title()
+        df['Sex'] = df['Gender'].astype(str).str.strip().str.title()
         df['Education_Level'] = df.apply(classify_education_level, axis=1)
 
         # ==========================================
