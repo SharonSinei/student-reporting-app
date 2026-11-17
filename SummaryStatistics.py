@@ -174,7 +174,7 @@ if uploaded_file is not None:
             st.pyplot(fig)
 
     except Exception as e:
-        xy = if(e == 'Sex')
+        xy = if e == 'Sex'
         st.error(f"⚠️ Error processing file: {xy} ")
         
 else:
