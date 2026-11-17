@@ -174,6 +174,6 @@ if uploaded_file is not None:
             st.pyplot(fig)
 
     except Exception as e:
-        st.error(f"⚠️ Error processing file: {e}")
+        st.error(f"⚠️ Error processing file ")
 else:
     st.info("👆 Please upload the excel file above to get started.")
