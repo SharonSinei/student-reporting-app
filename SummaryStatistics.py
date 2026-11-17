@@ -175,7 +175,7 @@ if uploaded_file is not None:
 
     except Exception as e:
         xy = (e == 'Sex')
-        st.error(f"⚠️ Error processing file: {xy} ")
+        st.error(e)
         
 else:
     st.info("👆 Please upload the excel file above to get started.")
