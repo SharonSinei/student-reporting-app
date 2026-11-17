@@ -83,7 +83,7 @@ if uploaded_file is not None:
         df = pd.read_excel(uploaded_file, sheet_name=0)
 
         # Preprocessing
-        df['Sex'] = df['Sex'].astype(str).str.strip().str.title()
+        df['Gender'] = df['Gender'].astype(str).str.strip().str.title()
         df['Education_Level'] = df.apply(classify_education_level, axis=1)
 
         # ==========================================
@@ -92,7 +92,7 @@ if uploaded_file is not None:
         summary_table = pd.pivot_table(
             df,
             index='Education_Level',
-            columns='Sex',
+            columns='Gender',
             values='Reg. No',
             aggfunc='count',
             fill_value=0
@@ -174,8 +174,7 @@ if uploaded_file is not None:
             st.pyplot(fig)
 
     except Exception as e:
-        xy = (e == "'Sex'")
-        st.error(f"⚠️ Error processing file: {xy} ")
+        st.error(f"⚠️ Error processing file: {e} ")
         
 else:
     st.info("👆 Please upload the excel file above to get started.")
