@@ -83,7 +83,7 @@ if uploaded_file is not None:
         df = pd.read_excel(uploaded_file, sheet_name=0)
 
         # Preprocessing
-        df['Sex'] = df['Gender'].astype(str).str.strip().str.title()
+        df['Sex'] = df['Sex'].astype(str).str.strip().str.title()
         df['Education_Level'] = df.apply(classify_education_level, axis=1)
 
         # ==========================================
@@ -92,7 +92,7 @@ if uploaded_file is not None:
         summary_table = pd.pivot_table(
             df,
             index='Education_Level',
-            columns='Gender',
+            columns='Sex',
             values='Reg. No',
             aggfunc='count',
             fill_value=0
