@@ -74,7 +74,7 @@ def convert_df_to_excel(df_summary, total_count):
 
 
 # ==========================================
-# HELPER: ROBUST FILE READER FOR ERP EXPORTS
+# ROBUST ERP FILE READER
 # ==========================================
 def read_uploaded_dataset(uploaded_file):
     file_name = uploaded_file.name.lower()
@@ -83,12 +83,21 @@ def read_uploaded_dataset(uploaded_file):
     if file_name.endswith('.csv'):
         df_raw = pd.read_csv(uploaded_file, header=None)
     else:
-        try:
-            df_raw = pd.read_excel(uploaded_file, sheet_name=0, header=None)
-        except Exception:
-            # Fallback if standard Excel reader fails on legacy/ERP formats
-            uploaded_file.seek(0)
-            df_raw = pd.read_csv(uploaded_file, sep='\t', header=None)
+        # Try reading excel files with robust engine fallbacks (calamine -> xlrd -> openpyxl)
+        read_success = False
+        df_raw = None
+        
+        for engine in ['calamine', 'xlrd', 'openpyxl']:
+            try:
+                uploaded_file.seek(0)
+                df_raw = pd.read_excel(uploaded_file, sheet_name=0, header=None, engine=engine)
+                read_success = True
+                break
+            except Exception:
+                continue
+                
+        if not read_success:
+            raise ValueError("Could not parse the Excel file. Please ensure 'python-calamine' and 'xlrd' are installed in your requirements.txt.")
 
     # Check if the first row contains header names
     first_cell = str(df_raw.iloc[0, 0]).lower()

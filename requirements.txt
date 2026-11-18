@@ -3,5 +3,4 @@ pandas
 matplotlib
 openpyxl
 xlrd
-lxml
-html5lib
+python-calamine
