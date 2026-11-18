@@ -136,8 +136,8 @@ def read_uploaded_dataset(uploaded_file):
 # ==========================================
 # UI HEADER & FILE UPLOADER
 # ==========================================
-st.title("📊 StuReport: Student Summary Generator")
-st.markdown("Upload your raw ERP export file (**`.xlsx`, `.xls`, or `.csv`**—with or without headers) to automatically generate summary reports.")
+st.title("EduSummary: Student Summary Statistics Generator")
+st.markdown("Upload your ERP export file (**`.xlsx`, `.xls`, or `.csv`**—with or without headers) to automatically generate summary reports.")
 
 uploaded_file = st.file_uploader("Upload ERP Dataset File", type=["xlsx", "xls", "csv"])
 
@@ -218,4 +218,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"⚠️ Error processing file: {e}")
 else:
-    st.info("👆 Please upload your ERP export file above to get started.")
+    st.info("Please upload your ERP export file above to get started.")
