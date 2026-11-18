@@ -29,7 +29,7 @@ def classify_education_level(row):
     dept = str(row.get('Department', ''))
     
     # Rule 1: Bachelor's Degree
-    if any(k in course for k in ["Bachelor", "B.Sc.", "B.A.", "B.Ed.", "Undergraduate", "BSc.", "BACHELOR", "BSc in"]) or \
+    if any(k in course for k in ["Bachelor", "B.Sc.", "B.A.", "B.Ed.", "Undergraduate", "BSc.", "BACHELOR", "BSc", "BACHELOR", "Bachelors"]) or \
        any(k in dept for k in ["Bachelor"]):
         return "Bachelor's Degree"
         
@@ -44,12 +44,12 @@ def classify_education_level(row):
         return "Certificate"
         
     # Rule 4: Master's Degree
-    elif any(k in course for k in ["Master", "M.Sc.", "M.A.", "MBA", "M.Phil", "Postgraduate Diploma", "MSc.", "MSc in"]) or \
+    elif any(k in course for k in ["Master", "M.Sc.", "M.A.", "MBA", "M.Phil", "Postgraduate Diploma", "MSc.", "MSc in", "Masters"]) or \
          any(k in dept for k in ["Master"]):
         return "Master's Degree"
         
     # Rule 5: Doctoral Degree
-    elif any(k in course for k in ["Ph.D", "Doctor", "PhD", "DPhil", "PHD."]) or \
+    elif any(k in course for k in ["Ph.D", "Doctor", "PhD", "DPhil", "PHD.", "Ph.D."]) or \
          any(k in dept for k in ["Doctoral", "PhD"]):
         return "Doctoral Degree"
         
