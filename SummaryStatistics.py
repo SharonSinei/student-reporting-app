@@ -74,6 +74,48 @@ def convert_df_to_excel(df_summary, total_count):
 
 
 # ==========================================
+# HELPER: ROBUST FILE READER FOR ERP EXPORTS
+# ==========================================
+def read_uploaded_dataset(uploaded_file):
+    file_name = uploaded_file.name.lower()
+    
+    # Read full dataset without headers first to inspect structure
+    if file_name.endswith('.csv'):
+        df_raw = pd.read_csv(uploaded_file, header=None)
+    else:
+        try:
+            df_raw = pd.read_excel(uploaded_file, sheet_name=0, header=None)
+        except Exception:
+            # Fallback for HTML/XML disguised .xls files exported by some ERPs
+            uploaded_file.seek(0)
+            tables = pd.read_html(uploaded_file)
+            df_raw = tables[0]
+
+    # Check if the first row contains header names
+    first_cell = str(df_raw.iloc[0, 0]).lower()
+    has_header = any(keyword in first_cell for keyword in ['serial', 'reg', 'name', 'course'])
+
+    if has_header:
+        # Promote row 0 to column headers
+        df_raw.columns = df_raw.iloc[0]
+        df = df_raw[1:].reset_index(drop=True)
+    else:
+        df = df_raw.copy()
+        if len(df.columns) == len(ERP_COLUMNS):
+            df.columns = ERP_COLUMNS
+        else:
+            df.columns = [f"Col_{i}" for i in range(len(df.columns))]
+            if len(df.columns) >= 7:
+                df.rename(columns={
+                    df.columns[3]: 'Gender', 
+                    df.columns[5]: 'Course', 
+                    df.columns[6]: 'Department'
+                }, inplace=True)
+
+    return df
+
+
+# ==========================================
 # UI HEADER & FILE UPLOADER
 # ==========================================
 st.title("📊 StuReport: Student Summary Generator")
@@ -83,43 +125,14 @@ uploaded_file = st.file_uploader("Upload ERP Dataset File", type=["xlsx", "xls",
 
 if uploaded_file is not None:
     try:
-        file_name = uploaded_file.name.lower()
-        
-        # Check if file has headers or is headerless from ERP export
-        # We read first to inspect
-        if file_name.endswith('.csv'):
-            df_temp = pd.read_csv(uploaded_file, nrows=1, header=None)
-        else:
-            df_temp = pd.read_excel(uploaded_file, sheet_name=0, nrows=1, header=None)
-            
-        # Heuristic: Check if the first row contains typical header text or actual student data (e.g. Reg Numbers/Serials)
-        first_cell = str(df_temp.iloc[0, 0])
-        has_header = any(keyword in first_cell.lower() for keyword in ['serial', 'reg', 'name', 'course'])
-        
-        # Read file accordingly
-        if file_name.endswith('.csv'):
-            if has_header:
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_csv(uploaded_file, header=None)
-                if len(df.columns) == len(ERP_COLUMNS):
-                    df.columns = ERP_COLUMNS
-        else:
-            if has_header:
-                df = pd.read_excel(uploaded_file, sheet_name=0)
-            else:
-                df = pd.read_excel(uploaded_file, sheet_name=0, header=None)
-                if len(df.columns) == len(ERP_COLUMNS):
-                    df.columns = ERP_COLUMNS
-                else:
-                    # Fallback assignment by position if column counts differ slightly
-                    df.columns = [f"Col_{i}" for i in range(len(df.columns))]
-                    # Map known index positions if standard ERP format matches
-                    if len(df.columns) >= 6:
-                        df.rename(columns={df.columns[3]: 'Gender', df.columns[5]: 'Course', df.columns[6]: 'Department'}, inplace=True)
+        df = read_uploaded_dataset(uploaded_file)
 
-        # Standardize column names if variations exist
+        # Standardize column names
         df.columns = [str(c).strip() for c in df.columns]
+        
+        # Normalize 'Sex' to 'Gender' if present in file headers
+        if 'Sex' in df.columns and 'Gender' not in df.columns:
+            df.rename(columns={'Sex': 'Gender'}, inplace=True)
         
         # Ensure required columns exist
         if 'Gender' not in df.columns or ('Course' not in df.columns and 'Department' not in df.columns):
@@ -190,4 +203,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"⚠️ Error processing file: {e}")
 else:
-    st.info("👆 Please upload your ERP export file above to get started.")
+    st.info("Please upload your ERP export file above to get started.")
