@@ -74,19 +74,24 @@ def convert_df_to_excel(df_summary, total_count):
 
 
 # ==========================================
-# ROBUST ERP FILE READER
+# ROBUST ERP FILE READER WITH ENCODING FALLBACK
 # ==========================================
 def read_uploaded_dataset(uploaded_file):
     file_name = uploaded_file.name.lower()
     uploaded_file.seek(0)
     
+    df_raw = None
+    
     if file_name.endswith('.csv'):
-        df_raw = pd.read_csv(uploaded_file, header=None)
+        # Try reading CSV with utf-8, fallback to latin1 for legacy encoding
+        try:
+            df_raw = pd.read_csv(uploaded_file, header=None, encoding='utf-8')
+        except UnicodeDecodeError:
+            uploaded_file.seek(0)
+            df_raw = pd.read_csv(uploaded_file, header=None, encoding='latin1')
     else:
-        # Try reading excel files with robust engine fallbacks (calamine -> xlrd -> openpyxl)
+        # Try multiple engines for Excel/ERP files
         read_success = False
-        df_raw = None
-        
         for engine in ['calamine', 'xlrd', 'openpyxl']:
             try:
                 uploaded_file.seek(0)
@@ -97,7 +102,13 @@ def read_uploaded_dataset(uploaded_file):
                 continue
                 
         if not read_success:
-            raise ValueError("Could not parse the Excel file. Please ensure 'python-calamine' and 'xlrd' are installed in your requirements.txt.")
+            # Fallback: Treat as HTML or tab-separated text with latin1 encoding
+            try:
+                uploaded_file.seek(0)
+                df_raw = pd.read_csv(uploaded_file, sep='\t', header=None, encoding='latin1', on_bad_lines='skip')
+                read_success = True
+            except Exception as e:
+                raise ValueError(f"Could not parse file. Ensure 'python-calamine' and 'xlrd' are installed. Details: {e}")
 
     # Check if the first row contains header names
     first_cell = str(df_raw.iloc[0, 0]).lower()
