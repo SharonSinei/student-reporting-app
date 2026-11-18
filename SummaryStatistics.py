@@ -78,25 +78,23 @@ def convert_df_to_excel(df_summary, total_count):
 # ==========================================
 def read_uploaded_dataset(uploaded_file):
     file_name = uploaded_file.name.lower()
+    uploaded_file.seek(0)
     
-    # Read full dataset without headers first to inspect structure
     if file_name.endswith('.csv'):
         df_raw = pd.read_csv(uploaded_file, header=None)
     else:
         try:
             df_raw = pd.read_excel(uploaded_file, sheet_name=0, header=None)
         except Exception:
-            # Fallback for HTML/XML disguised .xls files exported by some ERPs
+            # Fallback if standard Excel reader fails on legacy/ERP formats
             uploaded_file.seek(0)
-            tables = pd.read_html(uploaded_file)
-            df_raw = tables[0]
+            df_raw = pd.read_csv(uploaded_file, sep='\t', header=None)
 
     # Check if the first row contains header names
     first_cell = str(df_raw.iloc[0, 0]).lower()
     has_header = any(keyword in first_cell for keyword in ['serial', 'reg', 'name', 'course'])
 
     if has_header:
-        # Promote row 0 to column headers
         df_raw.columns = df_raw.iloc[0]
         df = df_raw[1:].reset_index(drop=True)
     else:
@@ -130,11 +128,9 @@ if uploaded_file is not None:
         # Standardize column names
         df.columns = [str(c).strip() for c in df.columns]
         
-        # Normalize 'Sex' to 'Gender' if present in file headers
         if 'Sex' in df.columns and 'Gender' not in df.columns:
             df.rename(columns={'Sex': 'Gender'}, inplace=True)
         
-        # Ensure required columns exist
         if 'Gender' not in df.columns or ('Course' not in df.columns and 'Department' not in df.columns):
             st.error("⚠️ The uploaded file structure could not be automatically mapped. Please ensure it matches your standard ERP export format.")
             st.stop()
@@ -143,7 +139,6 @@ if uploaded_file is not None:
         df['Gender'] = df['Gender'].astype(str).str.strip().str.title()
         df['Education_Level'] = df.apply(classify_education_level, axis=1)
         
-        # Check unclassified rows
         unclassified_count = (df['Education_Level'] == 'Other / Unclassified').sum()
         if unclassified_count > 0:
             st.warning(f"⚠️ Note: {unclassified_count} rows were classified as 'Other / Unclassified'.")
@@ -155,7 +150,7 @@ if uploaded_file is not None:
             df,
             index='Education_Level',
             columns='Gender',
-            values=df.columns[1], # Uses Reg. No column for counting
+            values=df.columns[1], 
             aggfunc='count',
             fill_value=0
         )
@@ -203,4 +198,4 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"⚠️ Error processing file: {e}")
 else:
-    st.info("Please upload your ERP export file above to get started.")
+    st.info("👆 Please upload your ERP export file above to get started.")
