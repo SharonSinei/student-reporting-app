@@ -69,18 +69,22 @@ def convert_df_to_excel(df_summary, total_count):
     return buffer
 
 
+# UI HEADER & MULTI-FORMAT FILE UPLOADER
 # ==========================================
-# UI HEADER & FILE UPLOADER
-# ==========================================
-st.title("Student Summary Statistics Generator")
-st.markdown("Upload your raw student reported dataset Excel file to automatically generate the summary breakdown by Course Level and Gender.")
+st.title("📊 StuReport: Student Summary Generator")
+st.markdown("Upload your student reported dataset file (**Excel `.xlsx`, `.xls`, or CSV `.csv`**) to automatically generate the summary breakdown by Course Level and Gender.")
 
-uploaded_file = st.file_uploader("Upload Reported Excel File (.xlsx)", type=["xlsx"])
+# Expanded accepted types to include xls, xlsx, and csv
+uploaded_file = st.file_uploader("Upload Dataset File", type=["xlsx", "xls", "csv"])
 
 if uploaded_file is not None:
     try:
-        # Read uploaded file
-        df = pd.read_excel(uploaded_file, sheet_name=0)
+        # Determine file extension and read accordingly
+        file_name = uploaded_file.name.lower()
+        if file_name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file, sheet_name=0)
 
         # Preprocessing
         df['Sex'] = df['Sex'].astype(str).str.strip().str.title()
