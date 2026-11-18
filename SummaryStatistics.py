@@ -22,13 +22,9 @@ ERP_COLUMNS = [
 ]
 
 # ==========================================
-# ENHANCED RULE-BASED EDUCATION LEVEL CLASSIFIER
+# RULE-BASED EDUCATION LEVEL CLASSIFIER
 # ==========================================
 def classify_education_level(row):
-    """
-    Categorizes course names and departments into standardized education levels 
-    using an expanded rule set to catch all variations.
-    """
     course = str(row.get('Course', ''))
     dept = str(row.get('Department', ''))
     
@@ -90,11 +86,13 @@ if uploaded_file is not None:
         file_name = uploaded_file.name.lower()
         
         # Check if file has headers or is headerless from ERP export
+        # We read first to inspect
         if file_name.endswith('.csv'):
             df_temp = pd.read_csv(uploaded_file, nrows=1, header=None)
         else:
             df_temp = pd.read_excel(uploaded_file, sheet_name=0, nrows=1, header=None)
             
+        # Heuristic: Check if the first row contains typical header text or actual student data (e.g. Reg Numbers/Serials)
         first_cell = str(df_temp.iloc[0, 0])
         has_header = any(keyword in first_cell.lower() for keyword in ['serial', 'reg', 'name', 'course'])
         
@@ -114,17 +112,15 @@ if uploaded_file is not None:
                 if len(df.columns) == len(ERP_COLUMNS):
                     df.columns = ERP_COLUMNS
                 else:
+                    # Fallback assignment by position if column counts differ slightly
                     df.columns = [f"Col_{i}" for i in range(len(df.columns))]
+                    # Map known index positions if standard ERP format matches
                     if len(df.columns) >= 6:
                         df.rename(columns={df.columns[3]: 'Gender', df.columns[5]: 'Course', df.columns[6]: 'Department'}, inplace=True)
 
-        # Standardize column names
+        # Standardize column names if variations exist
         df.columns = [str(c).strip() for c in df.columns]
         
-        # Normalize column name if ERP exported it as "Sex" instead of "Gender"
-        if 'Sex' in df.columns and 'Gender' not in df.columns:
-            df.rename(columns={'Sex': 'Gender'}, inplace=True)
-
         # Ensure required columns exist
         if 'Gender' not in df.columns or ('Course' not in df.columns and 'Department' not in df.columns):
             st.error("⚠️ The uploaded file structure could not be automatically mapped. Please ensure it matches your standard ERP export format.")
@@ -190,35 +186,8 @@ if uploaded_file is not None:
             file_name="student_summary_report.csv",
             mime="text/csv"
         )
-        
-        # ==========================================
-        # VISUALIZATIONS
-        # ==========================================
-        st.markdown("---")
-        st.subheader("📊 Visual Breakdown")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("##### Gender Breakdown per Course Level")
-            fig, ax = plt.subplots(figsize=(6, 4))
-            summary_table.drop('Total', errors='ignore')[['Female', 'Male']].plot(kind='bar', ax=ax, color=['#e056fd', '#0984e3'])
-            ax.set_xlabel("Course Level")
-            ax.set_ylabel("Number of Students")
-            plt.xticks(rotation=45, ha='right')
-            plt.tight_layout()
-            st.pyplot(fig)
-            
-        with col2:
-            st.markdown("##### Total Students by Course Level")
-            fig, ax = plt.subplots(figsize=(6, 4))
-            summary_table.drop('Total', errors='ignore').sum(axis=1).plot(kind='barh', ax=ax, color='#2b5c8f')
-            ax.set_xlabel("Total Count")
-            ax.set_ylabel("Course Level")
-            plt.tight_layout()
-            st.pyplot(fig)
 
     except Exception as e:
         st.error(f"⚠️ Error processing file: {e}")
 else:
-    st.info(" Please upload your ERP export file above to get started.")
+    st.info("👆 Please upload your ERP export file above to get started.")
